@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, simpledialog
 import penyimpanan
 
 # ==============================
@@ -277,6 +277,19 @@ class ShoppingApp:
 
         tk.Button(
             actions,
+            text="Ubah Nama",
+            command=self.edit_item,
+            bg=DARK_GREEN,
+            fg=WHITE,
+            relief="flat",
+            font=("Segoe UI", 9, "bold"),
+            padx=12,
+            pady=9,
+            cursor="hand2"
+        ).pack(side="left", padx=(8, 0))
+
+        tk.Button(
+            actions,
             text="Hapus Barang",
             command=self.delete_item,
             bg=RED,
@@ -369,12 +382,77 @@ class ShoppingApp:
             )
             return
 
+        if self.nama_sudah_ada(name):
+            messagebox.showwarning(
+                "Peringatan",
+                "Barang tersebut sudah ada di daftar!"
+            )
+            return
+
         self.items.append({
             "name": name,
             "done": False
         })
 
         self.entry.delete(0, tk.END)
+
+        self.save_data()
+        self.refresh_list()
+
+    # ==============================
+    # CEK DUPLIKAT
+    # ==============================
+
+    def nama_sudah_ada(self, name, kecuali=None):
+
+        for index, item in enumerate(self.items):
+
+            if index == kecuali:
+                continue
+
+            if item["name"].lower() == name.lower():
+                return True
+
+        return False
+
+    # ==============================
+    # UBAH NAMA BARANG
+    # ==============================
+
+    def edit_item(self):
+
+        index = self.get_selected_index()
+
+        if index is None:
+            return
+
+        name = simpledialog.askstring(
+            "Ubah Nama",
+            "Nama barang baru:",
+            initialvalue=self.items[index]["name"],
+            parent=self.root
+        )
+
+        if name is None:
+            return
+
+        name = name.strip()
+
+        if not name:
+            messagebox.showwarning(
+                "Peringatan",
+                "Nama barang tidak boleh kosong!"
+            )
+            return
+
+        if self.nama_sudah_ada(name, kecuali=index):
+            messagebox.showwarning(
+                "Peringatan",
+                "Barang tersebut sudah ada di daftar!"
+            )
+            return
+
+        self.items[index]["name"] = name
 
         self.save_data()
         self.refresh_list()
