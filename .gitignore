@@ -1,0 +1,13 @@
+# Data pengguna
+shopping_data.json
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Hasil build PyInstaller
+build/
+dist/
+*.spec
