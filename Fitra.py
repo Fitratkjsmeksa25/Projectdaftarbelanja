@@ -15,6 +15,10 @@ GRAY = "#718078"
 RED = "#D9534F"
 
 
+def format_rupiah(angka):
+    return "Rp " + f"{angka:,}".replace(",", ".")
+
+
 class ShoppingApp:
 
     def __init__(self, root):
@@ -110,6 +114,10 @@ class ShoppingApp:
             summary, "BELUM DIBELI", 2
         )
 
+        self.total_price_label = self.create_card(
+            summary, "TOTAL BELANJA", 3, size=15
+        )
+
         # INPUT BARANG
 
         input_card = tk.Frame(
@@ -148,6 +156,57 @@ class ShoppingApp:
         )
 
         self.entry.bind(
+            "<Return>",
+            lambda event: self.add_item()
+        )
+
+        tk.Label(
+            input_row,
+            text="Jml",
+            bg=WHITE,
+            fg=GRAY,
+            font=("Segoe UI", 9, "bold")
+        ).pack(side="left", padx=(10, 4))
+
+        self.qty_entry = tk.Entry(
+            input_row,
+            width=5,
+            font=("Segoe UI", 11),
+            bg="#F8FAF8",
+            fg=TEXT,
+            relief="flat",
+            highlightthickness=1,
+            highlightbackground="#E4ECE7"
+        )
+        self.qty_entry.insert(0, "1")
+        self.qty_entry.pack(side="left", ipady=10)
+
+        self.qty_entry.bind(
+            "<Return>",
+            lambda event: self.add_item()
+        )
+
+        tk.Label(
+            input_row,
+            text="Harga",
+            bg=WHITE,
+            fg=GRAY,
+            font=("Segoe UI", 9, "bold")
+        ).pack(side="left", padx=(10, 4))
+
+        self.price_entry = tk.Entry(
+            input_row,
+            width=10,
+            font=("Segoe UI", 11),
+            bg="#F8FAF8",
+            fg=TEXT,
+            relief="flat",
+            highlightthickness=1,
+            highlightbackground="#E4ECE7"
+        )
+        self.price_entry.pack(side="left", ipady=10)
+
+        self.price_entry.bind(
             "<Return>",
             lambda event: self.add_item()
         )
@@ -214,24 +273,45 @@ class ShoppingApp:
 
         self.tree = ttk.Treeview(
             table_frame,
-            columns=("status", "nama"),
+            columns=("status", "nama", "jumlah", "harga", "subtotal"),
             show="headings",
             selectmode="browse"
         )
 
         self.tree.heading("status", text="STATUS")
         self.tree.heading("nama", text="NAMA BARANG")
+        self.tree.heading("jumlah", text="JML")
+        self.tree.heading("harga", text="HARGA")
+        self.tree.heading("subtotal", text="SUBTOTAL")
 
         self.tree.column(
             "status",
-            width=150,
+            width=120,
             anchor="center"
         )
 
         self.tree.column(
             "nama",
-            width=400,
+            width=200,
             anchor="w"
+        )
+
+        self.tree.column(
+            "jumlah",
+            width=50,
+            anchor="center"
+        )
+
+        self.tree.column(
+            "harga",
+            width=100,
+            anchor="e"
+        )
+
+        self.tree.column(
+            "subtotal",
+            width=110,
+            anchor="e"
         )
 
         self.tree.pack(
@@ -277,7 +357,7 @@ class ShoppingApp:
 
         tk.Button(
             actions,
-            text="Ubah Nama",
+            text="Ubah Barang",
             command=self.edit_item,
             bg=DARK_GREEN,
             fg=WHITE,
@@ -326,7 +406,7 @@ class ShoppingApp:
     # KARTU RINGKASAN
     # ==============================
 
-    def create_card(self, parent, title, column):
+    def create_card(self, parent, title, column, size=22):
 
         card = tk.Frame(
             parent,
@@ -360,7 +440,7 @@ class ShoppingApp:
             text="0",
             bg=WHITE,
             fg=GREEN,
-            font=("Segoe UI", 22, "bold")
+            font=("Segoe UI", size, "bold")
         )
 
         label.pack(anchor="w", padx=15, pady=(0, 12))
@@ -389,12 +469,34 @@ class ShoppingApp:
             )
             return
 
+        try:
+            qty = int(self.qty_entry.get().strip() or "1")
+            price = int(self.price_entry.get().strip() or "0")
+        except ValueError:
+            messagebox.showwarning(
+                "Peringatan",
+                "Jumlah dan harga harus berupa angka!"
+            )
+            return
+
+        if qty < 1 or price < 0:
+            messagebox.showwarning(
+                "Peringatan",
+                "Jumlah minimal 1 dan harga tidak boleh negatif!"
+            )
+            return
+
         self.items.append({
             "name": name,
+            "qty": qty,
+            "price": price,
             "done": False
         })
 
         self.entry.delete(0, tk.END)
+        self.qty_entry.delete(0, tk.END)
+        self.qty_entry.insert(0, "1")
+        self.price_entry.delete(0, tk.END)
 
         self.save_data()
         self.refresh_list()
@@ -416,7 +518,7 @@ class ShoppingApp:
         return False
 
     # ==============================
-    # UBAH NAMA BARANG
+    # UBAH BARANG
     # ==============================
 
     def edit_item(self):
@@ -426,10 +528,12 @@ class ShoppingApp:
         if index is None:
             return
 
+        item = self.items[index]
+
         name = simpledialog.askstring(
-            "Ubah Nama",
-            "Nama barang baru:",
-            initialvalue=self.items[index]["name"],
+            "Ubah Barang",
+            "Nama barang:",
+            initialvalue=item["name"],
             parent=self.root
         )
 
@@ -452,7 +556,31 @@ class ShoppingApp:
             )
             return
 
-        self.items[index]["name"] = name
+        qty = simpledialog.askinteger(
+            "Ubah Barang",
+            "Jumlah:",
+            initialvalue=item["qty"],
+            minvalue=1,
+            parent=self.root
+        )
+
+        if qty is None:
+            return
+
+        price = simpledialog.askinteger(
+            "Ubah Barang",
+            "Harga satuan (Rp):",
+            initialvalue=item["price"],
+            minvalue=0,
+            parent=self.root
+        )
+
+        if price is None:
+            return
+
+        item["name"] = name
+        item["qty"] = qty
+        item["price"] = price
 
         self.save_data()
         self.refresh_list()
@@ -550,7 +678,13 @@ class ShoppingApp:
                 "",
                 "end",
                 iid=str(index),
-                values=(status, item["name"])
+                values=(
+                    status,
+                    item["name"],
+                    item["qty"],
+                    format_rupiah(item["price"]),
+                    format_rupiah(item["qty"] * item["price"])
+                )
             )
 
         total = len(self.items)
@@ -565,6 +699,15 @@ class ShoppingApp:
         self.total_label.config(text=str(total))
         self.done_label.config(text=str(done))
         self.remaining_label.config(text=str(remaining))
+
+        total_price = sum(
+            item["qty"] * item["price"]
+            for item in self.items
+        )
+
+        self.total_price_label.config(
+            text=format_rupiah(total_price)
+        )
 
     # ==============================
     # SIMPAN DATA
