@@ -18,8 +18,8 @@ Data disimpan otomatis ke file JSON, jadi daftar tidak hilang saat aplikasi ditu
 
 | File | Fungsi |
 |---|---|
-| `main.py` | Pintu masuk, menjalankan aplikasi |
-| `gui.py` | Tampilan dan logika interaksi (class `ShoppingApp`) |
+| `Main.py` | Pintu masuk, menjalankan aplikasi |
+| `Gui.py` | Tampilan dan logika interaksi (class `ShoppingApp`) |
 | `penyimpanan.py` | Menyimpan dan memuat data JSON, daftar kategori |
 
 ## Cara Menjalankan
@@ -34,7 +34,7 @@ python main.py
 
 ```
 pip install pyinstaller
-pyinstaller --onefile --windowed --name MyShoppingList main.py
+pyinstaller --onefile --windowed --name MyShoppingList Main.py
 ```
 
 Hasilnya ada di folder `dist/`. File `shopping_data.json` akan dibuat di folder yang sama

@@ -1,7 +1,18 @@
 import json
 import os
+import sys
 
-FILE_DATA = "shopping_data.json"
+
+def folder_aplikasi():
+    # Saat dijalankan sebagai .exe, simpan data di samping file .exe.
+    # Saat dijalankan sebagai skrip, simpan di folder skrip ini.
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(sys.executable)
+
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+FILE_DATA = os.path.join(folder_aplikasi(), "shopping_data.json")
 KATEGORI = ["Makanan", "Minuman", "Kebersihan", "Lainnya"]
 
 
