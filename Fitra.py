@@ -24,8 +24,8 @@ class ShoppingApp:
     def __init__(self, root):
         self.root = root
         self.root.title("My Shopping List")
-        self.root.geometry("760x620")
-        self.root.minsize(650, 550)
+        self.root.geometry("880x660")
+        self.root.minsize(780, 580)
         self.root.configure(bg=BG)
 
         self.items = penyimpanan.muat_data()
@@ -160,6 +160,16 @@ class ShoppingApp:
             lambda event: self.add_item()
         )
 
+        self.category_box = ttk.Combobox(
+            input_row,
+            values=penyimpanan.KATEGORI,
+            state="readonly",
+            width=11,
+            font=("Segoe UI", 10)
+        )
+        self.category_box.set("Lainnya")
+        self.category_box.pack(side="left", padx=(10, 0), ipady=8)
+
         tk.Label(
             input_row,
             text="Jml",
@@ -251,7 +261,7 @@ class ShoppingApp:
             top,
             textvariable=self.search_var,
             font=("Segoe UI", 10),
-            width=22,
+            width=16,
             relief="flat",
             bg="#F4F7F5"
         )
@@ -259,6 +269,36 @@ class ShoppingApp:
 
         search.bind(
             "<KeyRelease>",
+            lambda event: self.refresh_list()
+        )
+
+        self.filter_kategori = ttk.Combobox(
+            top,
+            values=["Semua kategori"] + penyimpanan.KATEGORI,
+            state="readonly",
+            width=14,
+            font=("Segoe UI", 9)
+        )
+        self.filter_kategori.set("Semua kategori")
+        self.filter_kategori.pack(side="right", padx=(0, 8))
+
+        self.filter_kategori.bind(
+            "<<ComboboxSelected>>",
+            lambda event: self.refresh_list()
+        )
+
+        self.filter_status = ttk.Combobox(
+            top,
+            values=["Semua", "Belum dibeli", "Sudah dibeli"],
+            state="readonly",
+            width=12,
+            font=("Segoe UI", 9)
+        )
+        self.filter_status.set("Semua")
+        self.filter_status.pack(side="right", padx=(0, 8))
+
+        self.filter_status.bind(
+            "<<ComboboxSelected>>",
             lambda event: self.refresh_list()
         )
 
@@ -273,13 +313,14 @@ class ShoppingApp:
 
         self.tree = ttk.Treeview(
             table_frame,
-            columns=("status", "nama", "jumlah", "harga", "subtotal"),
+            columns=("status", "nama", "kategori", "jumlah", "harga", "subtotal"),
             show="headings",
             selectmode="browse"
         )
 
         self.tree.heading("status", text="STATUS")
         self.tree.heading("nama", text="NAMA BARANG")
+        self.tree.heading("kategori", text="KATEGORI")
         self.tree.heading("jumlah", text="JML")
         self.tree.heading("harga", text="HARGA")
         self.tree.heading("subtotal", text="SUBTOTAL")
@@ -294,6 +335,12 @@ class ShoppingApp:
             "nama",
             width=200,
             anchor="w"
+        )
+
+        self.tree.column(
+            "kategori",
+            width=100,
+            anchor="center"
         )
 
         self.tree.column(
@@ -488,6 +535,7 @@ class ShoppingApp:
 
         self.items.append({
             "name": name,
+            "category": self.category_box.get(),
             "qty": qty,
             "price": price,
             "done": False
@@ -578,7 +626,28 @@ class ShoppingApp:
         if price is None:
             return
 
+        category = simpledialog.askstring(
+            "Ubah Barang",
+            "Kategori (" + ", ".join(penyimpanan.KATEGORI) + "):",
+            initialvalue=item["category"],
+            parent=self.root
+        )
+
+        if category is None:
+            return
+
+        category = category.strip().capitalize()
+
+        if category not in penyimpanan.KATEGORI:
+            messagebox.showwarning(
+                "Peringatan",
+                "Kategori harus salah satu dari: "
+                + ", ".join(penyimpanan.KATEGORI)
+            )
+            return
+
         item["name"] = name
+        item["category"] = category
         item["qty"] = qty
         item["price"] = price
 
@@ -663,10 +732,24 @@ class ShoppingApp:
             self.tree.delete(row)
 
         keyword = self.search_var.get().lower()
+        filter_status = self.filter_status.get()
+        filter_kategori = self.filter_kategori.get()
 
         for index, item in enumerate(self.items):
 
             if keyword not in item["name"].lower():
+                continue
+
+            if filter_status == "Belum dibeli" and item["done"]:
+                continue
+
+            if filter_status == "Sudah dibeli" and not item["done"]:
+                continue
+
+            if (
+                filter_kategori != "Semua kategori"
+                and item["category"] != filter_kategori
+            ):
                 continue
 
             if item["done"]:
@@ -681,6 +764,7 @@ class ShoppingApp:
                 values=(
                     status,
                     item["name"],
+                    item["category"],
                     item["qty"],
                     format_rupiah(item["price"]),
                     format_rupiah(item["qty"] * item["price"])

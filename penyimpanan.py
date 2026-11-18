@@ -2,6 +2,7 @@ import json
 import os
 
 FILE_DATA = "shopping_data.json"
+KATEGORI = ["Makanan", "Minuman", "Kebersihan", "Lainnya"]
 
 
 def ke_angka(nilai, default, minimum):
@@ -36,8 +37,14 @@ def muat_data():
         if not isinstance(item, dict) or not item.get("name"):
             continue
 
+        kategori = item.get("category")
+
+        if kategori not in KATEGORI:
+            kategori = "Lainnya"
+
         hasil.append({
             "name": str(item["name"]),
+            "category": kategori,
             "qty": ke_angka(item.get("qty", 1), 1, 1),
             "price": ke_angka(item.get("price", 0), 0, 0),
             "done": bool(item.get("done", False))
