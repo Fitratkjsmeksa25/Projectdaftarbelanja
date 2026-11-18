@@ -1,13 +1,10 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-import json
-import os
+import penyimpanan
 
 # ==============================
 # MY SHOPPING LIST
 # ==============================
-
-FILE_DATA = "shopping_data.json"
 
 BG = "#F4F7F5"
 GREEN = "#21865A"
@@ -27,8 +24,7 @@ class ShoppingApp:
         self.root.minsize(650, 550)
         self.root.configure(bg=BG)
 
-        self.items = []
-        self.load_data()
+        self.items = penyimpanan.muat_data()
 
         self.create_style()
         self.create_widgets()
@@ -498,46 +494,11 @@ class ShoppingApp:
 
     def save_data(self):
 
-        try:
-            with open(FILE_DATA, "w", encoding="utf-8") as file:
-                json.dump(
-                    self.items,
-                    file,
-                    indent=4,
-                    ensure_ascii=False
-                )
-
-        except OSError:
+        if not penyimpanan.simpan_data(self.items):
             messagebox.showerror(
                 "Kesalahan",
                 "Data gagal disimpan."
             )
-
-    # ==============================
-    # MEMUAT DATA
-    # ==============================
-
-    def load_data(self):
-
-        if os.path.exists(FILE_DATA):
-
-            try:
-                with open(FILE_DATA, "r", encoding="utf-8") as file:
-                    data = json.load(file)
-
-                if isinstance(data, list):
-                    self.items = [
-                        {
-                            "name": str(item["name"]),
-                            "done": bool(item.get("done", False))
-                        }
-                        for item in data
-                        if isinstance(item, dict)
-                        and item.get("name")
-                    ]
-
-            except (OSError, json.JSONDecodeError, KeyError, TypeError):
-                self.items = []
 
 
 # ==============================
